@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Hisoblagich</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & Base ─────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#07070d;color:#f0eeff;font-family:'Inter',sans-serif;overscroll-behavior:none}
+
+/* ── App Shell ─────────────────────────────────────────────────── */
+#app{
+  max-width:430px;margin:0 auto;min-height:100dvh;
+  display:flex;flex-direction:column;
+  background:#07070d;position:relative;overflow:hidden;
+}
+
+/* ── Screens ─────────────────────────────────────────────────── */
+.screen{display:none;flex-direction:column;flex:1;animation:fadeUp .22s ease}
+.screen.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Top Bar ─────────────────────────────────────────────────── */
+.topbar{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 18px 14px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  flex-shrink:0;
+}
+.topbar-title{font-size:17px;font-weight:800;flex:1;letter-spacing:-.3px}
+.topbar-sub{font-size:12px;color:#6b6b8a;margin-top:1px;font-weight:400}
+.btn-icon{
+  width:38px;height:38px;border-radius:12px;border:none;
+  background:rgba(255,255,255,.06);color:#c4c0e8;
+  font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s,transform .1s;flex-shrink:0;
+}
+.btn-icon:hover{background:rgba(255,255,255,.1)}
+.btn-icon:active{transform:scale(.92)}
+
+/* ── FAB ─────────────────────────────────────────────────────── */
+#fab{
+  position:fixed;bottom:28px;right:calc(50% - 215px + 18px);
+  width:52px;height:52px;border-radius:16px;border:none;
+  background:linear-gradient(135deg,#7c6aff,#a78bfa);
+  color:#fff;font-size:24px;cursor:pointer;
+  box-shadow:0 8px 24px rgba(124,106,255,.45);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s,box-shadow .15s;z-index:100;
+}
+#fab:hover{transform:scale(1.07);box-shadow:0 12px 32px rgba(124,106,255,.55)}
+#fab:active{transform:scale(.94)}
+
+/* ── Counter List ───────────────────────────────────────────── */
+#list-scroll{flex:1;overflow-y:auto;padding:14px 14px 88px}
+#list-scroll::-webkit-scrollbar{width:0}
+
+.card{
+  background:#111118;border-radius:20px;padding:16px 16px 14px;
+  margin-bottom:10px;border:1.5px solid rgba(255,255,255,.05);
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:border-color .2s,box-shadow .2s,transform .12s;
+}
+.card:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.card:active{transform:scale(.985)}
+.card.done-card{border-color:var(--c);box-shadow:0 0 20px color-mix(in srgb,var(--c) 20%,transparent)}
+
+.card-prog-bg{
+  position:absolute;left:0;top:0;bottom:0;
+  background:color-mix(in srgb,var(--c) 10%,transparent);
+  transition:width .5s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;border-radius:20px;
+}
+
+.card-top{display:flex;align-items:center;gap:12px}
+.card-emoji{
+  width:48px;height:48px;border-radius:14px;flex-shrink:0;
+  background:color-mix(in srgb,var(--c) 18%,transparent);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+}
+.card-info{flex:1;min-width:0}
+.card-name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-arabic{font-family:'Noto Naskh Arabic',serif;font-size:16px;color:#8884aa;direction:rtl;margin-top:2px;line-height:1.5}
+.card-score{text-align:right;flex-shrink:0}
+.card-score-num{font-size:26px;font-weight:900;color:var(--c);line-height:1}
+.card-score-of{font-size:11px;color:#4a4a6a;margin-top:2px;font-weight:500}
+
+.card-bar-wrap{margin-top:11px;height:4px;border-radius:4px;background:rgba(255,255,255,.06)}
+.card-bar{height:4px;border-radius:4px;background:var(--c);transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+.card-actions{display:flex;gap:6px;margin-top:11px;justify-content:flex-end}
+.btn-sm{
+  padding:4px 12px;border-radius:8px;border:none;
+  background:rgba(255,255,255,.06);color:#8884aa;
+  font-size:12px;font-weight:600;cursor:pointer;
+  transition:background .15s;font-family:inherit;
+}
+.btn-sm:hover{background:rgba(255,255,255,.1)}
+.btn-sm.danger{background:rgba(239,68,68,.1);color:#f87171}
+.btn-sm.danger:hover{background:rgba(239,68,68,.2)}
+
+.empty-state{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  color:#3a3a5a;text-align:center;padding:40px 30px;gap:12px;
+}
+.empty-state .es-icon{font-size:52px;opacity:.5}
+.empty-state .es-title{font-size:16px;font-weight:700;color:#5a5a7a}
+.empty-state .es-sub{font-size:13px;line-height:1.5}
+
+/* ── Count Screen ───────────────────────────────────────────── */
+#scr-count{background:radial-gradient(ellipse at 50% -10%,color-mix(in srgb,var(--c,.6) 12%,transparent),transparent 65%)}
+
+.count-body{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 20px 0;gap:0}
+
+/* Ring */
+.ring-wrap{position:relative;margin-top:16px}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-text{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.ring-num{font-size:48px;font-weight:900;color:var(--c);line-height:1;letter-spacing:-2px}
+.ring-of{font-size:13px;color:#4a4a6a;margin-top:4px;font-weight:500}
+
+/* Stats row */
+.stats-row{
+  display:flex;gap:0;margin-top:18px;
+  background:#111118;border-radius:16px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.05);width:100%;
+}
+.stat{flex:1;padding:12px 0;text-align:center}
+.stat+.stat{border-left:1px solid rgba(255,255,255,.05)}
+.stat-label{font-size:10px;color:#4a4a6a;text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.stat-val{font-size:18px;font-weight:800;color:#c4c0e8;margin-top:3px}
+
+/* Done banner */
+.done-banner{
+  margin-top:16px;width:100%;
+  background:color-mix(in srgb,#fbbf24 10%,transparent);
+  border:1.5px solid #fbbf24;border-radius:16px;
+  padding:14px 20px;text-align:center;
+  animation:popIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.done-banner p{font-size:14px;font-weight:700;color:#fbbf24}
+.btn-restart{
+  margin-top:10px;background:#fbbf24;border:none;border-radius:10px;
+  padding:8px 24px;font-weight:800;font-size:14px;cursor:pointer;
+  color:#07070d;font-family:inherit;transition:transform .1s;
+}
+.btn-restart:active{transform:scale(.95)}
+
+/* ORB — the signature element */
+.orb-wrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%}
+.orb{
+  width:220px;height:220px;border-radius:50%;
+  border:none;cursor:pointer;
+  background:radial-gradient(circle at 38% 36%,color-mix(in srgb,var(--c) 28%,#1a1628),#07070d);
+  outline:2.5px solid color-mix(in srgb,var(--c) 55%,transparent);
+  box-shadow:
+    0 0 0 0 color-mix(in srgb,var(--c) 20%,transparent),
+    0 16px 48px rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:80px;font-weight:900;color:var(--c);
+  position:relative;overflow:hidden;
+  transition:transform .12s,box-shadow .15s;
+  touch-action:manipulation;user-select:none;
+  -webkit-user-select:none;font-family:inherit;
+}
+.orb:hover:not(:disabled){box-shadow:0 0 0 12px color-mix(in srgb,var(--c) 10%,transparent),0 16px 48px rgba(0,0,0,.5)}
+.orb.pressed{transform:scale(.93)!important;box-shadow:0 0 0 28px color-mix(in srgb,var(--c) 12%,transparent),0 4px 16px rgba(0,0,0,.4)!important}
+.orb:disabled{cursor:default;filter:saturate(.4)}
+
+.orb-hint{font-size:11px;color:#3a3a5a;padding-bottom:20px;letter-spacing:.3px}
+
+/* ripple inside orb */
+.rpl{
+  position:absolute;border-radius:50%;
+  background:color-mix(in srgb,var(--c) 30%,transparent);
+  width:120px;height:120px;margin-left:-60px;margin-top:-60px;
+  animation:rpl .6s ease-out forwards;pointer-events:none;
+}
+@keyframes rpl{to{transform:scale(4);opacity:0}}
+
+/* ── Edit/New Screen ────────────────────────────────────────── */
+#edit-scroll{flex:1;overflow-y:auto;padding:18px 18px 12px;display:flex;flex-direction:column;gap:20px}
+#edit-scroll::-webkit-scrollbar{width:0}
+
+.preview-card{
+  background:#111118;border-radius:18px;padding:16px 18px;
+  display:flex;align-items:center;gap:14px;
+  border:2px solid var(--c);
+  transition:border-color .2s;
+}
+.preview-emoji{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;background:color-mix(in srgb,var(--c) 18%,transparent);flex-shrink:0;transition:background .2s}
+.preview-name{font-size:17px;font-weight:800}
+.preview-sub{font-size:13px;color:#6b6b8a;margin-top:2px}
+
+.field-label{font-size:11px;font-weight:700;color:#5a5a7a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.field-input{
+  width:100%;background:#111118;border:1.5px solid rgba(255,255,255,.08);
+  border-radius:13px;padding:13px 15px;color:#f0eeff;font-size:16px;
+  outline:none;font-family:'Inter',sans-serif;transition:border-color .2s;
+}
+.field-input:focus{border-color:var(--c)}
+.field-input.arabic{direction:rtl;font-family:'Noto Naskh Arabic',serif;font-size:18px}
+
+.chip-row{display:flex;gap:8px;flex-wrap:wrap}
+.chip{
+  padding:5px 14px;border-radius:9px;border:none;
+  background:rgba(255,255,255,.06);color:#8884aa;
+  font-size:13px;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:background .15s,color .15s;
+}
+.chip.active-chip{color:#07070d}
+
+input[type=range]{
+  width:100%;accent-color:var(--c);height:4px;
+  border-radius:4px;cursor:pointer;margin-top:4px;
+}
+
+.swatch-row{display:flex;gap:10px;flex-wrap:wrap}
+.swatch{
+  width:32px;height:32px;border-radius:50%;border:3px solid transparent;
+  cursor:pointer;transition:transform .15s,border-color .15s;
+}
+.swatch:hover{transform:scale(1.12)}
+.swatch.selected{border-color:#fff;transform:scale(1.08)}
+
+.emoji-grid{display:flex;gap:8px;flex-wrap:wrap}
+.emo{
+  width:40px;height:40px;border-radius:11px;border:2px solid transparent;
+  background:rgba(255,255,255,.06);font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;
+}
+.emo:hover{background:rgba(255,255,255,.1)}
+.emo.selected{border-color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
+
+.edit-footer{padding:16px 18px;border-top:1px solid rgba(255,255,255,.05);flex-shrink:0}
+.btn-save{
+  width:100%;padding:15px;border-radius:15px;border:none;
+  font-weight:800;font-size:16px;cursor:pointer;
+  font-family:inherit;transition:opacity .15s,transform .1s;letter-spacing:-.2px;
+}
+.btn-save:active{transform:scale(.98)}
+.btn-save:disabled{opacity:.35;cursor:not-allowed}
+
+/* ── Toast ─────────────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(12px);
+  background:#1e1b2e;border:1px solid rgba(255,255,255,.1);
+  color:#d0ccff;border-radius:12px;padding:10px 20px;
+  font-size:13px;font-weight:600;opacity:0;
+  transition:opacity .2s,transform .2s;pointer-events:none;
+  white-space:nowrap;z-index:200;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Scrollbar hidden ─────────────────────────────────────── */
+::-webkit-scrollbar{width:0}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ════ HOME SCREEN ════ -->
+  <div id="scr-home" class="screen active">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Hisoblagich 📿</div>
+        <div class="topbar-sub" id="home-sub">Yuklanyapti…</div>
+      </div>
+    </div>
+    <div id="list-scroll">
+      <div id="card-list"></div>
+      <div id="empty-state" class="empty-state" style="display:none">
+        <div class="es-icon">🎯</div>
+        <div class="es-title">Hozircha hech narsa yo'q</div>
+        <div class="es-sub">+ tugmasini bosib birinchi hisoblagichingizni yarating</div>
+      </div>
+    </div>
+    <button id="fab" onclick="openNew()">+</button>
+  </div>
+
+  <!-- ════ COUNT SCREEN ════ -->
+  <div id="scr-count" class="screen" style="--c:#7c6aff">
+    <div class="topbar">
+      <button class="btn-icon" onclick="goHome()">←</button>
+      <div style="flex:1;min-width:0">
+        <div class="topbar-title" id="cnt-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+        <div id="cnt-arabic" style="font-family:'Noto Naskh Arabic',serif;font-size:15px;color:#8884aa;direction:rtl;margin-top:1px"></div>
+      </div>
+      <button class="btn-icon" title="Qayta boshlash" onclick="resetActive()">↺</button>
+    </div>
+
+    <div class="count-body">
+      <!-- ring -->
+      <div class="ring-wrap">
+        <svg id="ring-svg" width="200" height="200">
+          <circle id="ring-bg" cx="100" cy="100" r="85" fill="none" stroke="#1a1828" stroke-width="11"/>
+          <circle id="ring-fg" cx="100" cy="100" r="85" fill="none"
+            stroke="#7c6aff" stroke-width="11" stroke-linecap="round"
+            stroke-dasharray="534" stroke-dashoffset="534"
+            style="transition:stroke-dashoffset .35s cubic-bezier(.4,0,.2,1),stroke .3s"/>
+        </svg>
+        <div class="ring-text">
+          <span class="ring-num" id="ring-num">0</span>
+          <span class="ring-of" id="ring-of">/ 33</span>
+        </div>
+      </div>
+
+      <!-- stats -->
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-label">Davr</div>
+          <div class="stat-val" id="stat-davr">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Jami</div>
+          <div class="stat-val" id="stat-jami">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Qoldi</div>
+          <div class="stat-val" id="stat-qoldi">33</div>
+        </div>
+      </div>
+
+      <!-- done banner (hidden initially) -->
+      <div id="done-banner" class="done-banner" style="display:none">
+        <p>🏆 Maqsadga yetdingiz!</p>
+        <button class="btn-restart" onclick="resetActive()">Yana boshlash</button>
+      </div>
+
+      <!-- ORB -->
+      <div class="orb-wrap">
+        <button id="orb" class="orb" onclick="tap(event)">
+          <span id="orb-num">0</span>
+        </button>
+      </div>
+      <div class="orb-hint">Bosing &nbsp;·&nbsp; yoki <kbd style="background:rgba(255,255,255,.08);padding:1px 6px;border-radius:5px;font-size:10px">Space</kbd></div>
+    </div>
+  </div>
+
+  <!-- ════ EDIT/NEW SCREEN ════ -->
+  <div id="scr-edit" class="screen" style="--c:#7c6aff">
+    <div class="topbar">
+      <button class="btn-icon" onclick="goHome()">←</button>
+      <div class="topbar-title" id="edit-title">Yangi hisoblagich</div>
+      <div style="width:38px"></div>
+    </div>
+
+    <div id="edit-scroll">
+      <!-- preview -->
+      <div class="preview-card" id="prev-card">
+        <div class="preview-emoji" id="prev-emoji">🎯</div>
+        <div>
+          <div class="preview-name" id="prev-name">Nom kiriting</div>
+          <div class="preview-sub" id="prev-sub">Maqsad: 33</div>
+        </div>
+      </div>
+
+      <!-- name -->
+      <div>
+        <div class="field-label">Nomi *</div>
+        <input id="inp-name" class="field-input" placeholder="Masalan: Suv ichish" oninput="syncPreview()"/>
+      </div>
+
+      <!-- arabic -->
+      <div>
+        <div class="field-label">Arabcha matn (ixtiyoriy)</div>
+        <input id="inp-arab" class="field-input arabic" placeholder="سُبْحَانَ اللَّهِ" oninput="syncPreview()"/>
+      </div>
+
+      <!-- target -->
+      <div>
+        <div class="field-label" id="lbl-target">Maqsad: 33</div>
+        <input id="inp-target" type="range" min="1" max="1000" value="33" oninput="syncPreview()"/>
+        <div class="chip-row" style="margin-top:10px" id="target-chips"></div>
+      </div>
+
+      <!-- color -->
+      <div>
+        <div class="field-label">Rang</div>
+        <div class="swatch-row" id="swatch-row"></div>
+      </div>
+
+      <!-- emoji -->
+      <div>
+        <div class="field-label">Ikon</div>
+        <div class="emoji-grid" id="emoji-grid"></div>
+      </div>
+    </div>
+
+    <div class="edit-footer">
+      <button id="btn-save" class="btn-save" onclick="saveEdit()" disabled>Saqlash</button>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Data ─────────────────────────────────────────────────────────
+const DEFAULTS = [
+  {id:1,nom:"SubhanAllah",    arab:"سُبْحَانَ اللَّهِ",         maqsad:33,  rang:"#4ade80",emoji:"🌿"},
+  {id:2,nom:"Alhamdulillah", arab:"الْحَمْدُ لِلَّهِ",        maqsad:33,  rang:"#818cf8",emoji:"🌙"},
+  {id:3,nom:"Allahu Akbar",  arab:"اللَّهُ أَكْبَرُ",         maqsad:34,  rang:"#fb923c",emoji:"✨"},
+  {id:4,nom:"Astaghfirullah",arab:"أَسْتَغْفِرُ اللَّهَ",     maqsad:100, rang:"#c084fc",emoji:"🤲"},
+  {id:5,nom:"Sport mashqlari",arab:"",                          maqsad:20,  rang:"#f87171",emoji:"💪"},
+  {id:6,nom:"Suv ichish",    arab:"",                           maqsad:8,   rang:"#38bdf8",emoji:"💧"},
+];
+const COLORS = ["#4ade80","#818cf8","#fb923c","#c084fc","#f87171","#38bdf8","#7c6aff","#a3e635","#e879f9","#34d399","#fbbf24","#f472b6"];
+const EMOJIS = ["🌿","🌙","✨","🤲","💪","💧","📿","🎯","❤️","🌸","⭐","🔢","📊","🏆","🎵","📖","🧘","🏃","☕","🍎"];
+const TARGETS = [5,7,10,20,33,34,99,100,200,500];
+
+function load(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb}catch{return fb}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+
+let counters = load("cnt_v2", DEFAULTS);
+let scores   = load("cnt_scores_v2", {});
+let totals   = load("cnt_totals_v2", {});
+let nextId   = counters.length ? Math.max(...counters.map(c=>c.id))+1 : 7;
+
+// active counter state
+let activeId = null;
+let editMode = "new"; // "new"|"edit"
+let editObj  = {};
+
+// ── Routing ───────────────────────────────────────────────────────
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>{
+    s.classList.toggle('active', s.id===id);
+  });
+}
+function goHome(){showScreen('scr-home');renderList()}
+
+// ── List ──────────────────────────────────────────────────────────
+function renderList(){
+  const list = document.getElementById('card-list');
+  const empty = document.getElementById('empty-state');
+  const sub = document.getElementById('home-sub');
+
+  const total = Object.values(totals).reduce((a,b)=>a+b,0);
+  sub.textContent = total>0 ? `Jami ${total} marta hisoblangiz` : "Biron narsani boshlang";
+
+  if(!counters.length){list.innerHTML='';empty.style.display='flex';return}
+  empty.style.display='none';
+
+  list.innerHTML = counters.map(c=>{
+    const sc = scores[c.id]||0;
+    const pct = Math.min(sc/c.maqsad,1)*100;
+    const done = sc>=c.maqsad;
+    return `
+    <div class="card${done?' done-card':''}" style="--c:${c.rang}" onclick="openCounter(${c.id})">
+      <div class="card-prog-bg" style="width:${pct}%"></div>
+      <div class="card-top">
+        <div class="card-emoji">${c.emoji}</div>
+        <div class="card-info">
+          <div class="card-name">${esc(c.nom)}</div>
+          ${c.arab?`<div class="card-arabic">${esc(c.arab)}</div>`:''}
+        </div>
+        <div class="card-score">
+          <div class="card-score-num">${sc}</div>
+          <div class="card-score-of">/ ${c.maqsad}</div>
+        </div>
+      </div>
+      <div class="card-bar-wrap"><div class="card-bar" style="width:${pct}%"></div></div>
+      <div class="card-actions" onclick="event.stopPropagation()">
+        <button class="btn-sm" onclick="openEdit(${c.id})">✏️ Tahrir</button>
+        <button class="btn-sm" onclick="resetCard(${c.id})">↺</button>
+        <button class="btn-sm danger" onclick="deleteCard(${c.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function resetCard(id){
+  scores[id]=0;
+  save('cnt_scores_v2',scores);
+  renderList();
+  showToast('Hisoblagich nolga qaytarildi');
+}
+
+function deleteCard(id){
+  if(!confirm('Bu hisoblagichni o\'chirasizmi?')) return;
+  counters = counters.filter(c=>c.id!==id);
+  delete scores[id]; delete totals[id];
+  save('cnt_v2',counters); save('cnt_scores_v2',scores); save('cnt_totals_v2',totals);
+  renderList();
+}
+
+// ── Count Screen ──────────────────────────────────────────────────
+const CIRC = 2*Math.PI*85;
+document.getElementById('ring-fg').style.strokeDasharray = CIRC;
+
+function openCounter(id){
+  activeId = id;
+  const c = counters.find(x=>x.id===id);
+  // set CSS var
+  document.getElementById('scr-count').style.setProperty('--c', c.rang);
+  document.getElementById('orb').style.setProperty('--c', c.rang);
+  document.getElementById('ring-fg').setAttribute('stroke', c.rang);
+  document.getElementById('cnt-name').textContent = c.emoji+' '+c.nom;
+  document.getElementById('cnt-arabic').textContent = c.arab||'';
+  updateCountUI();
+  showScreen('scr-count');
+}
+
+function updateCountUI(){
+  const c   = counters.find(x=>x.id===activeId);
+  const sc  = scores[activeId]||0;
+  const tot = totals[activeId]||0;
+  const done= sc>=c.maqsad;
+
+  document.getElementById('ring-num').textContent = sc;
+  document.getElementById('ring-of').textContent = '/ '+c.maqsad;
+  document.getElementById('orb-num').textContent  = sc;
+  document.getElementById('stat-davr').textContent= sc;
+  document.getElementById('stat-jami').textContent= tot;
+  document.getElementById('stat-qoldi').textContent= Math.max(c.maqsad-sc,0);
+
+  const pct = Math.min(sc/c.maqsad,1);
+  document.getElementById('ring-fg').style.strokeDashoffset = CIRC*(1-pct);
+
+  document.getElementById('done-banner').style.display = done?'block':'none';
+  document.getElementById('orb').disabled = done;
+
+  document.getElementById('ring-num').style.color = done?'#fbbf24':getComputedStyle(document.getElementById('scr-count')).getPropertyValue('--c').trim();
+  document.getElementById('orb-num').style.color  = done?'#fbbf24':'inherit';
+  if(done) document.getElementById('ring-fg').setAttribute('stroke','#fbbf24');
+  else {
+    const c2=counters.find(x=>x.id===activeId);
+    document.getElementById('ring-fg').setAttribute('stroke',c2.rang);
+  }
+}
+
+function tap(e){
+  const orb = document.getElementById('orb');
+  if(orb.disabled) return;
+  const c = counters.find(x=>x.id===activeId);
+  scores[activeId] = (scores[activeId]||0)+1;
+  totals[activeId] = (totals[activeId]||0)+1;
+  save('cnt_scores_v2',scores); save('cnt_totals_v2',totals);
+
+  // ripple
+  const rect = orb.getBoundingClientRect();
+  const cx = (e.touches?.[0]?.clientX??e.clientX)-rect.left;
+  const cy = (e.touches?.[0]?.clientY??e.clientY)-rect.top;
+  const rpl = document.createElement('span');
+  rpl.className='rpl';
+  rpl.style.cssText=`left:${cx}px;top:${cy}px;background:color-mix(in srgb,${c.rang} 30%,transparent)`;
+  orb.appendChild(rpl);
+  setTimeout(()=>rpl.remove(),650);
+
+  // pulse
+  orb.classList.add('pressed');
+  setTimeout(()=>orb.classList.remove('pressed'),120);
+
+  updateCountUI();
+}
+
+function resetActive(){
+  scores[activeId]=0;
+  save('cnt_scores_v2',scores);
+  updateCountUI();
+}
+
+// keyboard
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('scr-count').classList.contains('active')){
+    if(e.code==='Space'||e.code==='Enter'){
+      e.preventDefault();
+      tap({clientX:0,clientY:0});
+    }
+  }
+});
+
+// ── Edit/New ──────────────────────────────────────────────────────
+function buildEditUI(){
+  // swatches
+  const sr = document.getElementById('swatch-row');
+  sr.innerHTML = COLORS.map(c=>`<div class="swatch${c===editObj.rang?' selected':''}" style="background:${c}" onclick="setColor('${c}')"></div>`).join('');
+  // emojis
+  const eg = document.getElementById('emoji-grid');
+  eg.innerHTML = EMOJIS.map(em=>`<button class="emo${em===editObj.emoji?' selected':''}" onclick="setEmoji('${em}')">${em}</button>`).join('');
+  // chips
+  const tc = document.getElementById('target-chips');
+  tc.innerHTML = TARGETS.map(n=>`<button class="chip${editObj.maqsad===n?' active-chip':''}" style="${editObj.maqsad===n?`background:${editObj.rang};color:#07070d`:''}" onclick="setTarget(${n})">${n}</button>`).join('');
+}
+
+function syncPreview(){
+  editObj.nom    = document.getElementById('inp-name').value;
+  editObj.arab   = document.getElementById('inp-arab').value;
+  editObj.maqsad = +document.getElementById('inp-target').value;
+
+  document.getElementById('prev-name').textContent = editObj.nom||'Nom kiriting';
+  document.getElementById('prev-sub').textContent  = 'Maqsad: '+editObj.maqsad;
+  document.getElementById('lbl-target').textContent= 'Maqsad: '+editObj.maqsad;
+  document.getElementById('btn-save').disabled      = !editObj.nom.trim();
+
+  // rebuild chips highlighting
+  const tc = document.getElementById('target-chips');
+  tc.innerHTML = TARGETS.map(n=>`<button class="chip${editObj.maqsad===n?' active-chip':''}" style="${editObj.maqsad===n?`background:${editObj.rang};color:#07070d`:''}" onclick="setTarget(${n})">${n}</button>`).join('');
+}
+
+function setColor(c){
+  editObj.rang=c;
+  document.getElementById('scr-edit').style.setProperty('--c',c);
+  document.getElementById('prev-card').style.borderColor=c;
+  document.getElementById('prev-emoji').style.background=`color-mix(in srgb,${c} 18%,transparent)`;
+  document.getElementById('btn-save').style.background=c;
+  buildEditUI(); syncPreview();
+}
+function setEmoji(em){
+  editObj.emoji=em;
+  document.getElementById('prev-emoji').textContent=em;
+  buildEditUI();
+}
+function setTarget(n){
+  editObj.maqsad=n;
+  document.getElementById('inp-target').value=n;
+  syncPreview();
+}
+
+function openNew(){
+  editMode='new';
+  editObj={id:nextId++,nom:'',arab:'',maqsad:33,rang:COLORS[0],emoji:'🎯'};
+  document.getElementById('edit-title').textContent='Yangi hisoblagich';
+  document.getElementById('inp-name').value='';
+  document.getElementById('inp-arab').value='';
+  document.getElementById('inp-target').value=33;
+  document.getElementById('btn-save').textContent='Qo\'shish';
+  document.getElementById('btn-save').style.background=editObj.rang;
+  document.getElementById('btn-save').style.color='#07070d';
+  document.getElementById('scr-edit').style.setProperty('--c',editObj.rang);
+  buildEditUI(); syncPreview();
+  showScreen('scr-edit');
+}
+
+function openEdit(id){
+  const c = counters.find(x=>x.id===id);
+  editMode='edit'; editObj={...c};
+  document.getElementById('edit-title').textContent='Tahrirlash';
+  document.getElementById('inp-name').value=c.nom;
+  document.getElementById('inp-arab').value=c.arab||'';
+  document.getElementById('inp-target').value=c.maqsad;
+  document.getElementById('btn-save').textContent='Saqlash';
+  document.getElementById('btn-save').style.background=c.rang;
+  document.getElementById('btn-save').style.color='#07070d';
+  document.getElementById('scr-edit').style.setProperty('--c',c.rang);
+  buildEditUI(); syncPreview();
+  showScreen('scr-edit');
+}
+
+function saveEdit(){
+  if(!editObj.nom.trim()) return;
+  if(editMode==='new'){
+    counters.push({...editObj});
+    showToast(editObj.emoji+' '+editObj.nom+' qo\'shildi');
+  } else {
+    counters = counters.map(c=>c.id===editObj.id?{...editObj}:c);
+    showToast('Saqlandi ✓');
+  }
+  save('cnt_v2',counters);
+  goHome();
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ── Utils ─────────────────────────────────────────────────────────
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// ── Init ──────────────────────────────────────────────────────────
+renderList();
+</script>
+</body>
+</html>
